@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scholar Results</title>
+<style>
+
+  :root {
+    --scholar-blue: #1a0dab;
+    --scholar-blue-visited: #681da8;
+    --scholar-green: #006621;
+    --scholar-grey: #5f6368;
+    --scholar-grey-light: #70757a;
+    --scholar-bg: #ffffff;
+    --scholar-border: #ebebeb;
+    --scholar-accent-red: #d93025;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--scholar-bg);
+    font-family: arial, sans-serif;
+    color: #202124;
+    font-size: 14px;
+  }
+
+  /* Header bar */
+  .header {
+    border-bottom: 1px solid var(--scholar-border);
+    padding: 16px 30px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: #fff;
+  }
+  .logo {
+    font-family: 'Times New Roman', serif;
+    font-size: 26px;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
+  .logo .g1 { color: #4285F4; }
+  .logo .g2 { color: #DB4437; }
+  .logo .g3 { color: #F4B400; }
+  .logo .g4 { color: #4285F4; }
+  .logo .g5 { color: #0F9D58; }
+  .logo .g6 { color: #DB4437; }
+  .logo .scholar { color: var(--scholar-grey); margin-left: 6px; font-size: 22px; }
+
+  .search-wrap {
+    flex: 1;
+    max-width: 700px;
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #dadce0;
+    border-radius: 2px;
+    height: 40px;
+    background: #fff;
+  }
+  .search-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 0 14px;
+    font-size: 16px;
+    font-family: arial, sans-serif;
+    background: transparent;
+  }
+  .search-btn {
+    background: #4285F4;
+    border: none;
+    width: 56px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 0;
+  }
+  .sidebar {
+    padding: 18px 24px;
+    font-size: 13px;
+    color: #222;
+  }
+  .sidebar .section-title {
+    color: var(--scholar-accent-red);
+    font-weight: normal;
+    margin-bottom: 10px;
+  }
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 18px 0;
+  }
+  .sidebar li {
+    padding: 4px 0;
+    color: var(--scholar-grey);
+    cursor: pointer;
+  }
+  .sidebar li:hover { color: var(--scholar-blue); }
+  .sidebar li.active { color: #222; }
+  .sidebar .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    color: #222;
+  }
+
+  /* Articles column */
+  .articles {
+    padding: 12px 24px;
+    border-left: 1px solid transparent;
+  }
+  .articles-header {
+    border-bottom: 1px solid var(--scholar-border);
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+    color: #222;
+    font-size: 13px;
+  }
+
+  .upload-zone {
+    border: 1px dashed #c8c8c8;
+    border-radius: 4px;
+    padding: 28px;
+    text-align: center;
+    color: var(--scholar-grey);
+    background: #fafafa;
+  }
+  .upload-zone label {
+    color: var(--scholar-blue);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .upload-zone label:hover { text-decoration: underline; }
+  .upload-zone input { display: none; }
+  .upload-zone .hint {
+    font-size: 12px;
+    color: var(--scholar-grey-light);
+    margin-top: 6px;
+  }
+
+  .result {
+    padding: 12px 0 20px 0;
+    border-bottom: 1px solid #f1f1f1;
+  }
+  .result:last-child { border-bottom: none; }
+
+  .result .title {
+    font-size: 18px;
+    color: var(--scholar-blue);
+    margin: 0 0 2px 0;
+    font-weight: normal;
+    line-height: 1.3;
+    cursor: pointer;
+  }
+  .result .title:hover { text-decoration: underline; }
+  .result .title.visited { color: var(--scholar-blue-visited); }
+
+  .result .meta-authors {
+    color: var(--scholar-green);
+    font-size: 13px;
+    margin: 2px 0;
+  }
+  .result .meta-authors a {
+    color: var(--scholar-green);
+    text-decoration: none;
+  }
+  .result .meta-authors a:hover { text-decoration: underline; }
+
+  .result .meta-journal {
+    color: var(--scholar-green);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .result .meta-journal .dot { margin: 0 4px; color: #999; }
+
+  .result .abstract {
+    background: #f8f9fa;
+    border-left: 3px solid #e0e0e0;
+    padding: 10px 14px;
+    color: #3c4043;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 8px 0;
+    white-space: pre-wrap;
+  }
+
+  /* Collapsible abstract */
+  .abstract-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f3f4;
+    color: var(--scholar-blue);
+    border: 1px solid #dadce0;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: arial, sans-serif;
+    cursor: pointer;
+    margin: 8px 0 4px 0;
+    line-height: 1.4;
+  }
+  .abstract-toggle:hover { background: #e8eaed; }
+  .abstract-toggle .arrow {
+    display: inline-block;
+    font-size: 10px;
+    transition: transform 0.15s ease;
+  }
+  .abstract-toggle[aria-expanded="true"] .arrow {
+    transform: rotate(180deg);
+  }
+  .abstract-toggle .label { font-weight: bold; letter-spacing: 0.2px; }
+  .abstract-wrap { display: none; }
+  .abstract-wrap.open { display: block; }
+
+  /* Reference-mode header (used when CSV has a 'reference' column) */
+  .result .reference-block {
+    color: var(--scholar-blue);
+    font-size: 15px;
+    line-height: 1.45;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+  .result .reference-block:hover { text-decoration: underline; }
+  .result .reference-block.visited { color: var(--scholar-blue-visited); }
+
+  /* Keywords row beneath the abstract */
+  .keywords-row {
+    margin: 6px 0 4px 0;
+    font-size: 12px;
+    color: #3c4043;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .keywords-row .kw-label {
+    font-weight: bold;
+    color: var(--scholar-grey);
+    margin-right: 2px;
+  }
+  .kw-chip {
+    display: inline-block;
+    background: #e8f0fe;
+    color: #174ea6;
+    padding: 3px 9px;
+    border-radius: 11px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    border: 1px solid #d2e3fc;
+  }
+
+
+  .toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 8px 0 4px 0;
+    font-size: 12px;
+    color: var(--scholar-grey);
+  }
+  .toolbar button {
+    background: none;
+    border: 1px solid #dadce0;
+    color: var(--scholar-blue);
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: arial, sans-serif;
+    font-size: 12px;
+  }
+  .toolbar button:hover { background: #f1f3f4; }
+
+  .empty-note {
+    color: var(--scholar-grey);
+    font-size: 13px;
+    padding: 16px 0;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+  }
+
+  /* Print / Save as PDF */
+  @media print {
+    @page {
+      size: A4;
+      margin: 14mm 12mm;
+    }
+    html, body {
+      background: #fff;
+      font-size: 11pt;
+    }
+    .header,
+    .sidebar,
+    .upload-zone,
+    .toolbar,
+    .result .abstract-toggle {
+      display: none !important;
+    }
+    .layout {
+      display: block;
+    }
+    .articles {
+      padding: 0;
+      border: none;
+    }
+    .articles-header {
+      font-size: 14pt;
+      font-weight: bold;
+      border-bottom: 2px solid #333;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+    }
+    .result {
+      padding: 10px 0 14px 0;
+      border-bottom: 1px solid #ddd;
+      /* Try to keep each card on one page */
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .result .title {
+      color: #1a0dab !important;
+      font-size: 13pt;
+      cursor: default;
+    }
+    .result .meta-authors,
+    .result .meta-authors a,
+    .result .meta-journal {
+      color: #006621 !important;
+      text-decoration: none;
+    }
+    .result .abstract {
+      background: #f8f8f8 !important;
+      border-left: 2px solid #ccc;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color: #000 !important;
+      font-size: 10pt;
+      line-height: 1.5;
+    }
+    .result .reference-block {
+      color: #1a0dab !important;
+      font-size: 11pt;
+      cursor: default;
+    }
+    .keywords-row {
+      font-size: 9.5pt;
+      color: #333 !important;
+    }
+    .kw-chip {
+      background: #eef3fb !important;
+      color: #174ea6 !important;
+      border: 1px solid #d2e3fc !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .abstract-wrap {
+      display: block !important;
+    }
+  }
+
+/* Standalone export overrides — no interactive chrome */
+body { padding: 24px 32px; }
+.export-header { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+.export-sub { color: #5f6368; font-size: 12px; margin-bottom: 18px; }
+</style>
+</head>
+<body>
+<div><div class="export-header">Articles</div><div class="export-sub">11 results</div></div>
+<div id="results"><div class="result"><div class="main-col"><div class="reference-block" data-idx="0">Stricker, L. J., &amp; Ward, W. C. (2004). Stereotype threat, inquiring about test takers&#39; ethnicity and gender, and standardized test performance. Journal of Applied Social Psychology, 34(4), 665–693.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">Steele and Aronson (1995) found that the performance of Black research participants on ability test items portrayed as a problem-solving task, in laboratory experiments, was affected adversely when they were asked about their ethnicity. This outcome was attributed to stereotype threat: Performance was disrupted by participants&#39; concerns about fulfilling the negative stereotype concerning Black people&#39;s intellectual ability. The present field experiments extended that research to other ethnic groups and to males and females taking operational tests. The experiments evaluated the effects of inquiring about ethnicity and gender on the performance of students taking 2 standardized tests—the Advanced Placement Calculus AB Examination, and the Computerized Placement Tests—in actual test administrations. This inquiry did not have any effects on the test performance of Black, female, or other subgroups of students that were both statistically and practically significant.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">stereotype threat</span><span class="kw-chip">field experiment</span><span class="kw-chip">operational testing</span><span class="kw-chip">AP Calculus</span><span class="kw-chip">standardized tests</span><span class="kw-chip">ethnicity inquiry</span><span class="kw-chip">gender inquiry</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="1">Spencer, S. J., Steele, C. M., &amp; Quinn, D. M. (1999). Stereotype threat and women&#39;s math performance. Journal of Experimental Social Psychology, 35(1), 4–28.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">When women perform math, unlike men, they risk being judged by the negative stereotype that women have weaker math ability. We call this predicament stereotype threat and hypothesize that the apprehension it causes may disrupt women&#39;s math performance. In Study 1 we demonstrated that the pattern observed in the literature that women underperform on difficult (but not easy) math tests was observed among a highly selected sample of men and women. In Study 2 we demonstrated that this difference in performance could be eliminated when we lowered stereotype threat by describing the test as not producing gender differences. However, when the test was described as producing gender differences and stereotype threat was high, women performed substantially worse than equally qualified men did. A third experiment replicated this finding with a less highly selected population and explored the mediation of the effect. The implication that stereotype threat may underlie gender differences in advanced math performance, even those that have been attributed to genetically rooted sex differences, is discussed.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">stereotype threat</span><span class="kw-chip">women</span><span class="kw-chip">mathematics performance</span><span class="kw-chip">gender differences</span><span class="kw-chip">gender stereotypes</span><span class="kw-chip">mediation analysis</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="2">Pennington, C. R., Heim, D., Levy, A. R., &amp; Larkin, D. T. (2016). Twenty years of stereotype threat research: A review of psychological mediators. PLOS ONE.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">This systematic literature review appraises critically the mediating variables of stereotype threat. A bibliographic search was conducted across electronic databases between 1995 and 2015. The search identified 45 experiments from 38 articles and 17 unique proposed mediators that were categorized into affective/subjective (n = 6), cognitive (n = 7) and motivational mechanisms (n = 4). Empirical support was accrued for mediators such as anxiety, negative thinking, and mind-wandering, which are suggested to co-opt working memory resources under stereotype threat. Other research points to the assertion that stereotype threatened individuals may be motivated to disconfirm negative stereotypes, which can have a paradoxical effect of hampering performance. However, stereotype threat appears to affect diverse social groups in different ways, with no one mediator providing unequivocal empirical support. Underpinned by the multi-threat framework, the discussion postulates that different forms of stereotype threat may be mediated by distinct mechanisms.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">systematic review</span><span class="kw-chip">stereotype threat</span><span class="kw-chip">psychological mediators</span><span class="kw-chip">mechanisms</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="3">Walton, G. M., Murphy, M. C., &amp; Ryan, A. M. (2015). Stereotype threat in organizations: Implications for equity and performance. Annu. Rev. Organ. Psychol. Organ. Behav., 2(1), 523-550.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">Over the past 20 years, a large body of laboratory and field research has shown that, when people perform in settings in which their group is negatively stereotyped, they may experience a phenomenon called stereotype threat that can undermine motivation and trust and cause underperformance. This review describes that research and places it into an organizational context. First, we describe the processes by which stereotype threat can impair outcomes among people in the workplace. Next, we delineate the situational cues in organizational settings that can exacerbate stereotype threat, and explain how and why these cues affect stereotyped individuals. Finally, we discuss relatively simple empirically based strategies that organizations can implement to reduce stereotype threat and create conditions in which employees and applicants from all groups can succeed.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">gender</span><span class="kw-chip">performance</span><span class="kw-chip">race</span><span class="kw-chip">stereotype</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="4">Flore, P. C., Mulder, J., &amp; Wicherts, J. M. (2019). The influence of gender stereotype threat on mathematics test scores of Dutch high school students: A registered report. Comprehensive Results in Social Psychology, 140–174.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">The effects of gender stereotype threat on mathematical test performance in the classroom have been extensively studied in several cultural contexts. Theory predicts that stereotype threat lowers girls&#39; performance on mathematics tests, while leaving boys&#39; math performance unaffected. We conducted a large-scale stereotype threat experiment in Dutch high schools (N = 2064) to study the generalizability of the effect. In this registered report, we set out to replicate the overall effect among female high school students and to study four core theoretical moderators, namely domain identification, gender identification, math anxiety, and test difficulty. Among the girls, we found neither an overall effect of stereotype threat on math performance, nor any moderated stereotype threat effects. Most variance in math performance was explained by gender, domain identification, and math identification. We discuss several theoretical and statistical explanations for these findings. Our results are limited to the studied population (i.e. Dutch high school students, age 13–14) and the studied domain (mathematics).</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">stereotype threat</span><span class="kw-chip">registered report</span><span class="kw-chip">replication</span><span class="kw-chip">Dutch high school students</span><span class="kw-chip">mathematics</span><span class="kw-chip">math anxiety</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="5">Magoutier, F., Vallée, B., &amp; Pansu, P. (2026). Effect of stereotype threat on the performance of elementary school children: A meta-analysis. European Journal of Psychology of Education, 41, article 5.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">Over the last several decades, a large body of research has sought to identify how stereotype threat affects the performance of people targeted by a negative stereotype. This paper presents a meta-analysis which aims to investigate how this phenomenon acts on elementary school children (kindergarten to fifth grade). Our main objective was to identify the age at which stereotype threat impacts school performance, and the conditions for its onset. We selected 17 relevant studies and used 25 effect sizes. The analyses of the empty model (random effect model, Viechtbauer, 2010) highlight a small significant effect indicating that elementary school children underperformed in a stereotype-threat condition compared to a non-threatening condition. The only moderator that was tested in the confirmatory analysis “activation type” was non-significant. However, the subsequent exploratory analyses revealed a significant effect of “grade level” and “stereotype type.” The results tend to show that stereotype threat acts negatively on the performance of 2nd to 5th graders, but does not impact the performance of younger children. Surprisingly, gender stereotypes do not seem to be the most harmful among these primary school participants. Indeed, the threat of the intelligence stereotype group harms a child&#39;s academic performance considerably more.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">meta-analysis</span><span class="kw-chip">stereotype threat</span><span class="kw-chip">elementary school children</span><span class="kw-chip">gender stereotype</span><span class="kw-chip">academic performance</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="6">Berndt, T. J., &amp; Heller, K. A. (1986). Gender stereotypes and social inferences: A developmental study. Journal of Personality and Social Psychology, 50(5), 889.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">Investigated changes between childhood and adulthood in reliance on gender stereotypes when making inferences about another person. 36 children from each of 3 age groups (kindergarten [mean age 5 yrs 8 mo], 3rd grade [mean age 8 yrs 9 mo], and 6th grade [mean age 11 yrs 8 mo]) and 36 college students were told that a boy or a girl had chosen activities consistent or inconsistent with gender stereotypes. Ss were asked to predict the actor&#39;s future behavior, rate the actor on several traits, and estimate the actor&#39;s popularity with peers. College students predicted that the actor&#39;s future behavior would be approximately as consistent (or inconsistent) with gender stereotypes as their past behavior. College students&#39; ratings of the actor&#39;s traits and their judgments about the popularity of boys were also influenced by the actor&#39;s past behavior. Sixth graders showed a similar pattern of social inferences, but the effects of the actor&#39;s past behavior were weaker than at college age. By contrast, 3rd graders predicted that the actor&#39;s future behavior would be stereotypical, even if his or her past behavior was not. Past behavior had some effect on 3rd graders&#39; trait ratings but not on their popularity judgments. At kindergarten, only predictions for a girl&#39;s future behavior were affected by past-behavior information. The age differences are discussed in the context of current models of the development and functioning of gender stereotypes. </div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">gender stereotypes</span><span class="kw-chip">kindergarden childre</span><span class="kw-chip">college students</span><span class="kw-chip">past behavior</span><span class="kw-chip">trait judgment</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="7">Flore, P. C., &amp; Wicherts, J. M. (2015). Does stereotype threat influence performance of girls in stereotyped domains? A meta-analysis. Journal of School Psychology.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">Although the effect of stereotype threat concerning women and mathematics has been subject to various systematic reviews, none of them have been performed on the sub-population of children and adolescents. In this meta-analysis we estimated the effects of stereotype threat on performance of girls on math, science and spatial skills (MSSS) tests. Moreover, we studied publication bias and four moderators: test difficulty, presence of boys, gender equality within countries, and the type of control group that was used in the studies. We selected study samples when the study included girls, samples had a mean age below 18 years, the design was (quasi-)experimental, the stereotype threat manipulation was administered between-subjects, and the dependent variable was a MSSS test related to a gender stereotype favoring boys. To analyze the 47 effect sizes, we used random effects and mixed effects models. The estimated mean effect size equaled −0.22 and significantly differed from 0. None of the moderator variables was significant; however, there were several signs for the presence of publication bias. We conclude that publication bias might seriously distort the literature on the effects of stereotype threat among schoolgirls. We propose a large replication study to provide a less biased effect size estimate.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">meta-analysis</span><span class="kw-chip">stereotype threat</span><span class="kw-chip">gender stereotypes</span><span class="kw-chip">mathematics</span><span class="kw-chip">science</span><span class="kw-chip">spatial skills</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="8">Muzzatti, B., &amp; Agnoli, F. (2007). Gender and mathematics: Attitudes and stereotype threat susceptibility in Italian children. Developmental Psychology, 43(3), 747–759.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">Two experiments investigated the development of attitudes toward mathematics and stereotype threat susceptibility in Italian children. Experiment 1 involved 476 elementary school boys and girls and produced evidence of gender differences in self-confidence in one&#39;s own mathematical ability and in gender stereotyping of mathematics during elementary school. It also provided initial evidence for a decrement in 10-year-old girls&#39; mathematics performance when stereotype threat was made salient by reminding participants that extraordinary achievement in mathematics is typically a male phenomenon. Experiment 2 (N = 271) replicated these findings and expanded them to middle school-age participants. Its results suggest that during middle school, the patterns observed in elementary school consolidate, and the stereotypes begin to produce detrimental effects in girls.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">stereotype threat</span><span class="kw-chip">Italian school-age children</span><span class="kw-chip">mathematics</span><span class="kw-chip">gender stereotypes</span><span class="kw-chip">elementary school</span><span class="kw-chip">middle school</span><span class="kw-chip">self-confidence</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="9">Désert, M., Préaux, M., &amp; Jund, R. (2009). So young and already victims of stereotype threat: Socio-economic status and performance of 6 to 9 years old children on Raven&#39;s progressive matrices. European Journal of Psychology of Education.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">The aim of this study was to verify whether children from low socio-economic status (SES) are victims of stereotype threat. Children in first grade (6 to 7 years old) and third grade (8 to 9 years old) performed Raven&#39;s progressive matrices, an intellectual ability test commonly used by psychologists. The test was presented either with the (evaluative) instructions recommended by Raven et al. (1998) or with non evaluative instructions. Children&#39;s SES and beliefs concerning differences of abilities at school as a function of SES were also assessed. The results indicated that, as early as first grade, participants believed that children from high SES are better at school than children from low SES. Furthermore, low SES participants&#39; performance on the Raven&#39;s matrices was lower in the evaluative condition than in the non evaluative condition. The experimental instructions did not affect high SES participants&#39; performance. The discussion explores implications of these results in the use of standardized tests to assess the intellectual abilities of low SES children.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">stereotype threat</span><span class="kw-chip">socio-economic status</span><span class="kw-chip">elementary-school children</span><span class="kw-chip">Raven&#39;s progressive matrices</span><span class="kw-chip">evaluative instructions</span></div></div></div></div><div class="result"><div class="main-col"><div class="reference-block" data-idx="10">Steele, C. M., &amp; Aronson, J. (1995). Stereotype threat and the intellectual test performance of African Americans. Journal of Personality and Social Psychology, 69(5), 797–811.</div><div class="abstract-wrap open" style="display:block"><div class="abstract">Stereotype threat is being at risk of confirming, as self-characteristic, a negative stereotype about one&#39;s group. Studies 1 and 2 varied the stereotype vulnerability of Black participants taking a difficult verbal test by varying whether or not their performance was ostensibly diagnostic of ability, and thus, whether or not they were at risk of fulfilling the racial stereotype about their intellectual ability. Reflecting the pressure of this vulnerability, Blacks underperformed in relation to Whites in the ability-diagnostic condition but not in the nondiagnostic condition (with Scholastic Aptitude Tests controlled). Study 3 validated that ability-diagnosticity cognitively activated the racial stereotype in these participants and motivated them not to conform to it, or to be judged by it. Study 4 showed that mere salience of the stereotype could impair Blacks&#39; performance even when the test was not ability diagnostic. The role of stereotype vulnerability in the standardized test performance of ability-stigmatized groups is discussed.</div><div class="keywords-row"><span class="kw-label">Keywords:</span> <span class="kw-chip">stereotype threat</span><span class="kw-chip">African Americans</span><span class="kw-chip">verbal test</span><span class="kw-chip">ability-diagnostic framing</span><span class="kw-chip">racial stereotype</span><span class="kw-chip">stereotype vulnerability</span><span class="kw-chip">standardized testing</span></div></div></div></div></div>
+</body>
+</html>

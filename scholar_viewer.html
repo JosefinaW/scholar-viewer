@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scholar Viewer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root {
+    --scholar-blue: #1a0dab;
+    --scholar-blue-visited: #681da8;
+    --scholar-green: #006621;
+    --scholar-grey: #5f6368;
+    --scholar-grey-light: #70757a;
+    --scholar-bg: #ffffff;
+    --scholar-border: #ebebeb;
+    --scholar-accent-red: #d93025;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--scholar-bg);
+    font-family: arial, sans-serif;
+    color: #202124;
+    font-size: 14px;
+  }
+
+  /* Header bar */
+  .header {
+    border-bottom: 1px solid var(--scholar-border);
+    padding: 16px 30px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: #fff;
+  }
+  .logo {
+    font-family: 'Times New Roman', serif;
+    font-size: 26px;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
+  .logo .g1 { color: #4285F4; }
+  .logo .g2 { color: #DB4437; }
+  .logo .g3 { color: #F4B400; }
+  .logo .g4 { color: #4285F4; }
+  .logo .g5 { color: #0F9D58; }
+  .logo .g6 { color: #DB4437; }
+  .logo .scholar { color: var(--scholar-grey); margin-left: 6px; font-size: 22px; }
+
+  .search-wrap {
+    flex: 1;
+    max-width: 700px;
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #dadce0;
+    border-radius: 2px;
+    height: 40px;
+    background: #fff;
+  }
+  .search-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 0 14px;
+    font-size: 16px;
+    font-family: arial, sans-serif;
+    background: transparent;
+  }
+  .search-btn {
+    background: #4285F4;
+    border: none;
+    width: 56px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 0;
+  }
+  .sidebar {
+    padding: 18px 24px;
+    font-size: 13px;
+    color: #222;
+  }
+  .sidebar .section-title {
+    color: var(--scholar-accent-red);
+    font-weight: normal;
+    margin-bottom: 10px;
+  }
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 18px 0;
+  }
+  .sidebar li {
+    padding: 4px 0;
+    color: var(--scholar-grey);
+    cursor: pointer;
+  }
+  .sidebar li:hover { color: var(--scholar-blue); }
+  .sidebar li.active { color: #222; }
+  .sidebar .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    color: #222;
+  }
+
+  /* Articles column */
+  .articles {
+    padding: 12px 24px;
+    border-left: 1px solid transparent;
+  }
+  .articles-header {
+    border-bottom: 1px solid var(--scholar-border);
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+    color: #222;
+    font-size: 13px;
+  }
+
+  .upload-zone {
+    border: 1px dashed #c8c8c8;
+    border-radius: 4px;
+    padding: 28px;
+    text-align: center;
+    color: var(--scholar-grey);
+    background: #fafafa;
+  }
+  .upload-zone label {
+    color: var(--scholar-blue);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .upload-zone label:hover { text-decoration: underline; }
+  .upload-zone input { display: none; }
+  .upload-zone .hint {
+    font-size: 12px;
+    color: var(--scholar-grey-light);
+    margin-top: 6px;
+  }
+
+  .result {
+    padding: 12px 0 20px 0;
+    border-bottom: 1px solid #f1f1f1;
+  }
+  .result:last-child { border-bottom: none; }
+
+  .result .title {
+    font-size: 18px;
+    color: var(--scholar-blue);
+    margin: 0 0 2px 0;
+    font-weight: normal;
+    line-height: 1.3;
+    cursor: pointer;
+  }
+  .result .title:hover { text-decoration: underline; }
+  .result .title.visited { color: var(--scholar-blue-visited); }
+
+  .result .meta-authors {
+    color: var(--scholar-green);
+    font-size: 13px;
+    margin: 2px 0;
+  }
+  .result .meta-authors a {
+    color: var(--scholar-green);
+    text-decoration: none;
+  }
+  .result .meta-authors a:hover { text-decoration: underline; }
+
+  .result .meta-journal {
+    color: var(--scholar-green);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .result .meta-journal .dot { margin: 0 4px; color: #999; }
+
+  .result .abstract {
+    background: #f8f9fa;
+    border-left: 3px solid #e0e0e0;
+    padding: 10px 14px;
+    color: #3c4043;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 8px 0;
+    white-space: pre-wrap;
+  }
+
+  /* Collapsible abstract */
+  .abstract-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f3f4;
+    color: var(--scholar-blue);
+    border: 1px solid #dadce0;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: arial, sans-serif;
+    cursor: pointer;
+    margin: 8px 0 4px 0;
+    line-height: 1.4;
+  }
+  .abstract-toggle:hover { background: #e8eaed; }
+  .abstract-toggle .arrow {
+    display: inline-block;
+    font-size: 10px;
+    transition: transform 0.15s ease;
+  }
+  .abstract-toggle[aria-expanded="true"] .arrow {
+    transform: rotate(180deg);
+  }
+  .abstract-toggle .label { font-weight: bold; letter-spacing: 0.2px; }
+  .abstract-wrap { display: none; }
+  .abstract-wrap.open { display: block; }
+
+  /* Reference-mode header (used when CSV has a 'reference' column) */
+  .result .reference-block {
+    color: var(--scholar-blue);
+    font-size: 15px;
+    line-height: 1.45;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+  .result .reference-block:hover { text-decoration: underline; }
+  .result .reference-block.visited { color: var(--scholar-blue-visited); }
+
+  /* Keywords row beneath the abstract */
+  .keywords-row {
+    margin: 6px 0 4px 0;
+    font-size: 12px;
+    color: #3c4043;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .keywords-row .kw-label {
+    font-weight: bold;
+    color: var(--scholar-grey);
+    margin-right: 2px;
+  }
+  .kw-chip {
+    display: inline-block;
+    background: #e8f0fe;
+    color: #174ea6;
+    padding: 3px 9px;
+    border-radius: 11px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    border: 1px solid #d2e3fc;
+  }
+
+
+  .toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 8px 0 4px 0;
+    font-size: 12px;
+    color: var(--scholar-grey);
+  }
+  .toolbar button {
+    background: none;
+    border: 1px solid #dadce0;
+    color: var(--scholar-blue);
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: arial, sans-serif;
+    font-size: 12px;
+  }
+  .toolbar button:hover { background: #f1f3f4; }
+
+  .empty-note {
+    color: var(--scholar-grey);
+    font-size: 13px;
+    padding: 16px 0;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+  }
+
+  /* Print / Save as PDF */
+  @media print {
+    @page {
+      size: A4;
+      margin: 14mm 12mm;
+    }
+    html, body {
+      background: #fff;
+      font-size: 11pt;
+    }
+    .header,
+    .sidebar,
+    .upload-zone,
+    .toolbar,
+    .result .abstract-toggle {
+      display: none !important;
+    }
+    .layout {
+      display: block;
+    }
+    .articles {
+      padding: 0;
+      border: none;
+    }
+    .articles-header {
+      font-size: 14pt;
+      font-weight: bold;
+      border-bottom: 2px solid #333;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+    }
+    .result {
+      padding: 10px 0 14px 0;
+      border-bottom: 1px solid #ddd;
+      /* Try to keep each card on one page */
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .result .title {
+      color: #1a0dab !important;
+      font-size: 13pt;
+      cursor: default;
+    }
+    .result .meta-authors,
+    .result .meta-authors a,
+    .result .meta-journal {
+      color: #006621 !important;
+      text-decoration: none;
+    }
+    .result .abstract {
+      background: #f8f8f8 !important;
+      border-left: 2px solid #ccc;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color: #000 !important;
+      font-size: 10pt;
+      line-height: 1.5;
+    }
+    .result .reference-block {
+      color: #1a0dab !important;
+      font-size: 11pt;
+      cursor: default;
+    }
+    .keywords-row {
+      font-size: 9.5pt;
+      color: #333 !important;
+    }
+    .kw-chip {
+      background: #eef3fb !important;
+      color: #174ea6 !important;
+      border: 1px solid #d2e3fc !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .abstract-wrap {
+      display: block !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <span class="g1">G</span><span class="g2">o</span><span class="g3">o</span><span class="g4">g</span><span class="g5">l</span><span class="g6">e</span><span class="scholar">Scholar</span>
+  </div>
+  <div class="search-wrap">
+    <input type="text" id="searchBox" value="Stereotype Threat" />
+    <button class="search-btn" aria-label="Search">🔍</button>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="section-title">Any time</div>
+    <ul>
+      <li>Since 2026</li>
+      <li>Since 2025</li>
+      <li>Since 2022</li>
+      <li>Custom range...</li>
+    </ul>
+    <div class="section-title">Sort by relevance</div>
+    <ul>
+      <li>Sort by date</li>
+    </ul>
+    <div class="section-title">Any type</div>
+    <ul>
+      <li>Review articles</li>
+    </ul>
+    <div class="checkbox-row"><input type="checkbox" /> include patents</div>
+    <div class="checkbox-row"><input type="checkbox" checked /> include citations</div>
+  </aside>
+
+  <main class="articles">
+    <div class="articles-header">Articles</div>
+
+    <div id="uploadZone" class="upload-zone">
+      <label for="fileInput">Choose a CSV file</label>
+      <span> or drop one here</span>
+      <input type="file" id="fileInput" accept=".csv,text/csv" />
+      <div class="hint">Expected columns: <code>title, authors, doi, journal, abstract</code> &nbsp;or&nbsp; <code>reference, abstract, keywords</code></div>
+    </div>
+
+    <div class="toolbar" id="toolbar" style="display:none;">
+      <span id="countLabel"></span>
+      <button id="shuffleBtn">Shuffle order</button>
+      <button id="printBtn">Save as PDF</button>
+      <button id="htmlBtn">Save as HTML</button>
+      <button id="resetBtn">Load different file</button>
+    </div>
+
+    <div id="results"></div>
+  </main>
+
+  <aside class="sidebar"></aside>
+</div>
+
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const uploadZone = document.getElementById('uploadZone');
+  const resultsEl = document.getElementById('results');
+  const toolbar = document.getElementById('toolbar');
+  const countLabel = document.getElementById('countLabel');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  let currentStudies = [];
+
+  // Delegated click handler for the abstract toggle buttons
+  document.getElementById('results').addEventListener('click', (e) => {
+    const btn = e.target.closest('.abstract-toggle');
+    if (!btn) return;
+    const wrap = btn.nextElementSibling;
+    if (!wrap || !wrap.classList.contains('abstract-wrap')) return;
+    const isOpen = wrap.classList.toggle('open');
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+
+  // Shuffle (Fisher-Yates)
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Approximate Scholar's author truncation: "Smith J, Doe A, ..."
+  function formatAuthors(authorsField) {
+    if (!authorsField) return '';
+    // Accept ";" or "," as separators; ";" preferred
+    let parts;
+    if (authorsField.includes(';')) {
+      parts = authorsField.split(';');
+    } else {
+      parts = authorsField.split(',');
+    }
+    parts = parts.map(p => p.trim()).filter(Boolean);
+    // Render each as a green clickable-style author
+    return parts.map(p => `<a href="#">${escapeHtml(p)}</a>`).join(', ');
+  }
+
+  function domainFromDoi(doi) {
+    if (!doi) return '';
+    if (doi.startsWith('10.1037')) return 'psycnet.apa.org';
+    if (doi.startsWith('10.1016')) return 'sciencedirect.com';
+    if (doi.startsWith('10.1080')) return 'tandfonline.com';
+    if (doi.startsWith('10.1007')) return 'link.springer.com';
+    return 'doi.org';
+  }
+
+  function fakeYear() {
+    // pseudo-randomized realistic year for the green meta line; not in source data
+    const years = [2014, 1995, 2019, 2019, 2016, 2009, 2007];
+    return years[Math.floor(Math.random() * years.length)];
+  }
+
+  function renderKeywords(kwField) {
+    if (!kwField) return '';
+    const parts = kwField.split(/[;,]/).map(p => p.trim()).filter(Boolean);
+    if (!parts.length) return '';
+    const chips = parts.map(p => `<span class="kw-chip">${escapeHtml(p)}</span>`).join('');
+    return `<div class="keywords-row"><span class="kw-label">Keywords:</span> ${chips}</div>`;
+  }
+
+  function render(studies) {
+    resultsEl.innerHTML = '';
+    studies.forEach((s, idx) => {
+      const journal = escapeHtml(s.journal || '');
+      const year = ''; // We don't have year reliably; leave blank to stay faithful to data
+      const journalLine = journal
+        ? `${journal}${year ? ', ' + year : ''} <span class="dot">·</span> ${escapeHtml(domainFromDoi(s.doi))}`
+        : (s.doi ? `<span class="dot">·</span> ${escapeHtml(domainFromDoi(s.doi))}` : '');
+
+      const doiHref = s.doi ? `https://doi.org/${encodeURI(s.doi)}` : null;
+      const useReferenceMode = !!s.reference && !s.title;
+
+      // Header block: either reference-mode (single line) or title+authors+journal
+      let header;
+      if (useReferenceMode) {
+        // Strip the DOI URL off the end of the reference to avoid duplication with the DOI pill
+        const refText = s.reference.replace(/\s*https?:\/\/doi\.org\/\S+\s*$/i, '').trim();
+        header = `<div class="reference-block" data-idx="${idx}">${escapeHtml(refText)}</div>`;
+      } else {
+        header = `
+          <div class="title" data-idx="${idx}">${escapeHtml(s.title || '(Untitled)')}</div>
+          ${s.authors ? `<div class="meta-authors">${formatAuthors(s.authors)}</div>` : ''}
+          ${journalLine ? `<div class="meta-journal">${journalLine}</div>` : ''}`;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'result';
+      card.innerHTML = `
+        <div class="main-col">
+          ${header}
+          ${s.abstract ? `
+            <button class="abstract-toggle" type="button" aria-expanded="false">
+              <span class="arrow">▼</span><span class="label">Abstract</span>
+            </button>
+            <div class="abstract-wrap">
+              <div class="abstract">${escapeHtml(s.abstract)}</div>
+              ${renderKeywords(s.keywords)}
+            </div>` : renderKeywords(s.keywords)}
+        </div>
+      `;
+
+      // Toggle visited color on click for fun
+      const titleEl = card.querySelector('.title, .reference-block');
+      if (titleEl) {
+        titleEl.addEventListener('click', () => {
+          titleEl.classList.toggle('visited');
+          if (doiHref) window.open(doiHref, '_blank', 'noopener');
+        });
+      }
+
+      resultsEl.appendChild(card);
+    });
+
+    countLabel.textContent = `About ${studies.length} results (0.03 sec)`;
+    toolbar.style.display = 'flex';
+  }
+
+  function handleFile(file) {
+    // Read the file ourselves so we can sniff the delimiter from the header row.
+    // PapaParse's auto-detection gets confused when fields contain semicolons internally.
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      let text = e.target.result;
+      // Strip UTF-8 BOM if present
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+      // Look at the header line only to decide the delimiter
+      const firstLine = text.split(/\r?\n/, 1)[0] || '';
+      const candidates = [',', ';', '\t', '|'];
+      let delim = ',';
+      let bestCount = 0;
+      for (const c of candidates) {
+        // Count occurrences of the candidate that are NOT inside double quotes
+        let count = 0, inQuote = false;
+        for (let i = 0; i < firstLine.length; i++) {
+          const ch = firstLine[i];
+          if (ch === '"') inQuote = !inQuote;
+          else if (!inQuote && ch === c) count++;
+        }
+        if (count > bestCount) { bestCount = count; delim = c; }
+      }
+
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        delimiter: delim,
+        complete: (res) => {
+          parseStudies(res);
+        },
+        error: (err) => {
+          resultsEl.innerHTML = `<div class="empty-note">Could not parse file: ${escapeHtml(err.message)}</div>`;
+        }
+      });
+    };
+    reader.onerror = () => {
+      resultsEl.innerHTML = '<div class="empty-note">Could not read the file.</div>';
+    };
+    reader.readAsText(file);
+  }
+
+  function parseStudies(res) {
+        // Normalize headers (lowercase) and field names
+        const studies = res.data.map(row => {
+          const norm = {};
+          for (const k of Object.keys(row)) {
+            norm[k.trim().toLowerCase()] = row[k];
+          }
+          // Reference-style row: extract DOI from the reference string if present
+          let doi = norm.doi;
+          if (!doi && norm.reference) {
+            const m = norm.reference.match(/10\.\d{4,9}\/[^\s,;]+/);
+            if (m) doi = m[0].replace(/[.,;]+$/, '');
+          }
+          return {
+            title: norm.title,
+            authors: norm.authors || norm.author,
+            doi: doi,
+            journal: norm.journal,
+            abstract: norm.abstract,
+            reference: norm.reference,
+            keywords: norm.keywords,
+          };
+        }).filter(s => s.title || s.abstract || s.reference);
+
+        if (!studies.length) {
+          resultsEl.innerHTML = '<div class="empty-note">No rows found. Make sure the CSV has a header row with the expected columns.</div>';
+          return;
+        }
+        currentStudies = studies;
+        uploadZone.style.display = 'none';
+        render(shuffle(currentStudies));
+  }
+
+  fileInput.addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (f) handleFile(f);
+  });
+
+  // Drag and drop
+  ['dragenter','dragover'].forEach(evt => uploadZone.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation();
+    uploadZone.style.background = '#eef6ff';
+  }));
+  ['dragleave','drop'].forEach(evt => uploadZone.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation();
+    uploadZone.style.background = '#fafafa';
+  }));
+  uploadZone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  shuffleBtn.addEventListener('click', () => {
+    render(shuffle(currentStudies));
+  });
+  document.getElementById('printBtn').addEventListener('click', async () => {
+    if (!currentStudies.length) return;
+    const btn = document.getElementById('printBtn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Generating…';
+    btn.disabled = true;
+
+    try {
+      // Build a clean export container off-screen so we can strip decorative
+      // Scholar chrome (source chip, action links) and control layout precisely.
+      const wrapper = buildExportContainer();
+      document.body.appendChild(wrapper);
+
+      await html2pdf().set({
+        margin:      [12, 12, 14, 12],   // top, left, bottom, right (mm)
+        filename:    'scholar_results.pdf',
+        image:       { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:   { mode: ['css', 'legacy'], avoid: '.result' }
+      }).from(wrapper).save();
+
+      document.body.removeChild(wrapper);
+    } catch (err) {
+      alert('Could not generate PDF: ' + err.message);
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('htmlBtn').addEventListener('click', () => {
+    if (!currentStudies.length) return;
+    const wrapper = buildExportContainer();
+    // Pull the stylesheet from the current page so the export looks identical.
+    const styleText = document.querySelector('style').textContent;
+
+    const doc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scholar Results</title>
+<style>
+${styleText}
+/* Standalone export overrides — no interactive chrome */
+body { padding: 24px 32px; }
+.export-header { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+.export-sub { color: #5f6368; font-size: 12px; margin-bottom: 18px; }
+</style>
+</head>
+<body>
+${wrapper.innerHTML}
+</body>
+</html>`;
+
+    const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'scholar_results.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // Build a container that mirrors the article results but strips the decorative
+  // Scholar chrome and interactive-only elements — used for both PDF and HTML export.
+  function buildExportContainer() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'export-root';
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-10000px';
+    wrapper.style.top = '0';
+    wrapper.style.width = '190mm';           // A4 width minus margins
+    wrapper.style.background = '#ffffff';
+    wrapper.style.padding = '0';
+
+    // Header
+    const header = document.createElement('div');
+    header.innerHTML = `
+      <div class="export-header">Articles</div>
+      <div class="export-sub">${currentStudies.length} results</div>
+    `;
+    wrapper.appendChild(header);
+
+    // Clone results — force abstracts open and remove toggle buttons (exports are static)
+    const resultsClone = document.getElementById('results').cloneNode(true);
+    resultsClone.querySelectorAll('.abstract-toggle').forEach(el => el.remove());
+    resultsClone.querySelectorAll('.abstract-wrap').forEach(el => {
+      el.classList.add('open');
+      el.style.display = 'block';
+    });
+    wrapper.appendChild(resultsClone);
+
+    return wrapper;
+  }
+  resetBtn.addEventListener('click', () => {
+    currentStudies = [];
+    resultsEl.innerHTML = '';
+    toolbar.style.display = 'none';
+    uploadZone.style.display = 'block';
+    fileInput.value = '';
+  });
+</script>
+
+</body>
+</html>
